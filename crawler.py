@@ -1,9 +1,9 @@
 from bs4 import BeautifulSoup
+import re
 # 1. Using selenium
 # from selenium import webdriver
 # from webdriver_manager.chrome import ChromeDriverManager
 # import time
-# import re
 
 # browser = webdriver.Chrome(ChromeDriverManager().install())
 # browser.get('https://www.dailystrength.org/group/depression')
@@ -34,54 +34,69 @@ from requests.exceptions import RequestException
 import time
 import csv
 import json
+import datetime
+import sys
 
-# 2. Parsing url link
+# Method 2: Parsing url link
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 def get_one_page(url):
     try:
         response = requests.get(url,headers=headers)
         if response.status_code == 200:
-            return response.json()
+            return response
         return None
     except RequestException:
         print("FAILED")
 
-def parse_pages(url_list):
+def parse_pages(url_list, condition):
+    infos = []
     for url in url_list:
-        try:
-            response = requests.get(url,headers=headers)
-            if response.status_code == 200:
-                return response.json()
-            return None
-        except RequestException:
-            print("FAILED")
+        res = requests.get(url,headers=headers)
+        soup = BeautifulSoup(res.content, "html.parser")
+        # date of post
+        date = soup.find("time").get_text()
+        date_sep = date.split("/")
+        post_date = datetime.datetime(int(date_sep[2]), int(date_sep[0]), int(date_sep[1]))
+        # make sure correct post date range
+        if post_date > datetime.datetime(2017, 12, 31) and post_date < datetime.datetime(2020, 8, 1):
+            # find post title and content
+            title = soup.find(id="discussion_title").get_text()
+            post_contents = soup.find("div", {"class": "posts__content"}).find_all("p")
+            post_content = '\n'.join(pc.get_text() for pc in post_contents)
+            infos.append([title,post_content,condition])
+    return infos
 
 def save(infos):
     # save to csv file
-    with open('depression.csv', 'a', newline='',encoding='utf-8') as f:
-        fieldnames = ['Title', 'Director', 'Actors', 'Rate', 'Link']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for item in parse_one_page(d):
-            writer.writerow(item)
-    pass
+    with open('mental_health.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(infos)
 
 def main():
-    for i in range(10): ##!!! when to stop
-        url = 'https://www.dailystrength.org/group/depression/discussions/ajax?page={}&limit=15'.format(i+1)
-        d = get_one_page(url)
-        print('Finshed page {}'.format(i+1))
-        soup = BeautifulSoup(d['content'], "html.parser")
-        tags = soup.find_all(id = re.compile("^ds"))
-        url_list = []
-        for tag in tags:
-            post_url = tag["href"]
-            url_list.append("https://www.dailystrength.org" + post_url)
+    # condition_list = ['depression','bipolar-disorder','self-injury','eating-disorders','loneliness','multiple-personalities',
+    #                   'adhd-add','personality-disorders','schizophrenia','anger-management','family-friends-of-bipolar',
+    #                   'stress-management','shyness','seasonal-affective-disorder','seasonal-affective-disorder',
+    #                   'post-partum-depression','kleptomania','stuttering','pyromania']
+    condition_list = ['schizophrenia','pyromania']
+    for condition in condition_list:
+        for i in range(101): ##!!! when to stop
+            url = 'https://www.dailystrength.org/group/{}/discussions/ajax?page={}&limit=15'.format(condition, i+1)
+            page = get_one_page(url)
+            page = page.json()
+            print('Finshed page {}'.format(i+1))
+            soup = BeautifulSoup(page['content'], "html.parser")
+            tags = soup.find_all(id = re.compile("^ds"))
+            url_list = []
+            for tag in tags:
+                post_url = tag["href"]
+                url_list.append("https://www.dailystrength.org" + post_url)
 
-        # get title and text for one group posts 
-        infos = parse_pages(url_list)
-        # dynamically save one groups info into depression.csv
-        save(infos)
+            # get title and text for one group posts 
+            infos = parse_pages(url_list,condition)
+            if len(infos) == 0:
+                break
+            # dynamically save one groups info into depression.csv
+            save(infos)
             
 if __name__=='__main__':
     main()
