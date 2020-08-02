@@ -30,8 +30,8 @@ def parse_pages(url_list, condition):
         date_sep = date.split("/")
         post_date = datetime.datetime(int(date_sep[2]), int(date_sep[0]), int(date_sep[1]))
         # make sure correct post date range
-        # if post_date > datetime.datetime(2017, 12, 31) and post_date < datetime.datetime(2020, 8, 1):
-        if True:
+        if post_date > datetime.datetime(2017, 12, 31) and post_date < datetime.datetime(2020, 8, 1):
+        # if True:
             # find post title and content
             title = soup.find(id="discussion_title").get_text()
             post_contents = soup.find("div", {"class": "posts__content"}).find_all("p")
@@ -50,7 +50,9 @@ def main():
                       'adhd-add','personality-disorders','schizophrenia','anger-management','family-friends-of-bipolar',
                       'stress-management','shyness','seasonal-affective-disorder','seasonal-affective-disorder',
                       'post-partum-depression','kleptomania','stuttering','pyromania']
-    # condition_list = ['schizophrenia']
+    # condition_list = ['adhd-add','personality-disorders','schizophrenia','anger-management','family-friends-of-bipolar',
+    #                   'stress-management','shyness','seasonal-affective-disorder','seasonal-affective-disorder',
+    #                   'post-partum-depression','kleptomania','stuttering','pyromania']
     with open('mental_health.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerows([["Title", "Content", "Mental Condition"]])
