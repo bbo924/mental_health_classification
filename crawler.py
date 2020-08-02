@@ -36,6 +36,7 @@ import csv
 import json
 import datetime
 import sys
+import time
 
 # Method 2: Parsing url link
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
@@ -58,7 +59,8 @@ def parse_pages(url_list, condition):
         date_sep = date.split("/")
         post_date = datetime.datetime(int(date_sep[2]), int(date_sep[0]), int(date_sep[1]))
         # make sure correct post date range
-        if post_date > datetime.datetime(2017, 12, 31) and post_date < datetime.datetime(2020, 8, 1):
+        # if post_date > datetime.datetime(2017, 12, 31) and post_date < datetime.datetime(2020, 8, 1):
+        if True:
             # find post title and content
             title = soup.find(id="discussion_title").get_text()
             post_contents = soup.find("div", {"class": "posts__content"}).find_all("p")
@@ -68,22 +70,26 @@ def parse_pages(url_list, condition):
 
 def save(infos):
     # save to csv file
-    with open('mental_health.csv', 'w', newline='') as file:
+    with open('mental_health.csv', 'a', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(infos)
 
 def main():
-    # condition_list = ['depression','bipolar-disorder','self-injury','eating-disorders','loneliness','multiple-personalities',
-    #                   'adhd-add','personality-disorders','schizophrenia','anger-management','family-friends-of-bipolar',
-    #                   'stress-management','shyness','seasonal-affective-disorder','seasonal-affective-disorder',
-    #                   'post-partum-depression','kleptomania','stuttering','pyromania']
-    condition_list = ['schizophrenia','pyromania']
+    condition_list = ['depression','bipolar-disorder','self-injury','eating-disorders','loneliness','multiple-personalities',
+                      'adhd-add','personality-disorders','schizophrenia','anger-management','family-friends-of-bipolar',
+                      'stress-management','shyness','seasonal-affective-disorder','seasonal-affective-disorder',
+                      'post-partum-depression','kleptomania','stuttering','pyromania']
+    # condition_list = ['schizophrenia']
+    with open('mental_health.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows([["Title", "Content", "Mental Condition"]])
     for condition in condition_list:
         for i in range(101): ##!!! when to stop
+            # start_time = time.time()
             url = 'https://www.dailystrength.org/group/{}/discussions/ajax?page={}&limit=15'.format(condition, i+1)
             page = get_one_page(url)
             page = page.json()
-            print('Finshed page {}'.format(i+1))
+            # print('Finshed page {}'.format(i+1))
             soup = BeautifulSoup(page['content'], "html.parser")
             tags = soup.find_all(id = re.compile("^ds"))
             url_list = []
@@ -93,6 +99,7 @@ def main():
 
             # get title and text for one group posts 
             infos = parse_pages(url_list,condition)
+            # print("--- %s seconds ---" % (time.time() - start_time))
             if len(infos) == 0:
                 break
             # dynamically save one groups info into depression.csv
