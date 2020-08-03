@@ -89,7 +89,7 @@ if __name__=='__main__':
 # time.sleep(3)
 # browser.find_element_by_xpath('//*[@id="load-more-discussions"]').click()
 # i = 0
-# for i in range(2):##这里设置点击5次“加载更多”
+# for i in range(2): # click times
 #     print(i)
 #     browser.find_element_by_xpath('//*[@id="load-more-discussions"]').click()
 #     time.sleep(5)###如果网页没有完全加载，会出现点击错误，会点击到某个电影页面，所以加了一个睡眠时间。
